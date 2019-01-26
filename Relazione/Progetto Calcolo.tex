@@ -1,0 +1,280 @@
+\documentclass{article}
+
+\title{Progetto \textsc{Matlab}\\Fondamenti di Calcolo Numerico}
+\date{2018-01-30}
+\author{Emanuele Intagliata\\Prof. Carlo De Falco}
+
+\usepackage{amssymb}
+\renewcommand*\contentsname{Indice}
+\newcommand{\abs}[1]{\left|#1\right|}
+
+\begin{document}
+
+	\pagenumbering{gobble}
+	\maketitle
+
+	\newpage
+	\pagenumbering{arabic}
+	
+	\tableofcontents
+
+	\newpage
+	\section{Introduzione}
+Questo progetto vuole illustrare un algoritmo adattivo per la ricostruzione di sample mancanti in segnali audio campionati che possono essere localmente descritti attraverso processi autoregressivi.
+\\
+In particolare, in questo elaborato discutiamo l'implementazione in ambiente \textsc{Matlab} dell'algoritmo presentato nel paper \cite{paper_1986}.
+\medskip
+\\
+Il metodo descritto nel paragrafo \ref{algoritmo} usa l'informazione contenuta nei sample vicini noti. Inoltre esso è il primo passo per un algoritmo iterativo nel quale ad ogni passo la stima corrente dei sample mancanti è usata per calcolarne una nuova stima. 
+\\
+Il metodo è infine testato su segnali artificialmente generati, su segnali musicali e su segnali vocali.
+
+	\subsection{Organizzazione del paper}
+	
+	...
+
+\newpage
+	\section{Trattazione teorica}
+	
+	\subsection{Il problema e le ipotesi}
+Il paper \cite{paper_1986} tratta il problema della ricostruzione (o interpolazione) di sample mancanti in segnali campionati, in particolare in segnali audio. Viene presentato un algoritmo capace di ricostruire in modo soddisfacente i sample mancanti.
+\\
+Le ipotesi che facciamo sono:
+
+\begin{itemize}
+\item La \emph{posizione} dei sample mancanti è nota
+\item I sample mancanti sono circondati da un numero sufficiente ampio di sample dal valore noto
+\item Il segnale è a banda limitata\footnote{Ipotesi sempre verificata per segnali audio digitali}
+\end{itemize}
+
+Le sequenze contenenti sample mancanti possono presentarsi in gruppi isolati (\textit{bursts}) o in pattern sparsi e casuali.\footnote{Il numero di sample sconosciuti è da intendersi come numero totale dei sample mancanti. } 
+L'algoritmo presentato risulta efficace in entrambi i casi.
+\medskip 
+\\
+La stima del valore dei sample mancanti è ottenuta minimizzando la somma dei quadrati dell'errore residuo. 
+Un'analisi statistica contenuta nel paper \cite[Section II.B]{paper_1986} dimostra che, per un \textit{burst} di sample mancanti, l'errore quadratico medio atteso per sample converge alla varianza de segnale quando la lunghezza della sequenza mancante tende a infinito. 
+%\medskip 
+%\\
+\subsubsection{Modellizzazione dei segnali audio come processi AR}  
+Si assume che i segnali da interpolare possano essere modellizzati come \emph{processi auto-regressivi (AR) di ordine finito}\footnote{La scelta di modellizzare i segnali audio come processi AR può essere motivata dal fatto che molti segnali che incontriamo comunemente (segnali vocali, segnali audio tonali) possono essere così modellizzati.}.
+\\
+Il metodo presentato nel paper \cite{paper_1986} è \emph{adattivo} nel senso che, dato un set finito di dati, per prima cosa stimiamo i parametri del modello AR. Noti questi ultimi, i sample ignoti possono essere ottenuti come \textit{soluzione di un sistema lineare di equazioni}.
+\\
+In realtà sia i parametri del modello AR che i sample ignoti potrebbero essere ottenuti in un unico passaggio minimizzando una funzione dipendente da entrambi. Tuttavia questa funzione contiene termini del quarto ordine e minimizzarla è un problema non banale. In questo progetto, come anche nel paper \cite{paper_1986}, adotteremo un \textbf{approccio sub-ottimale}. In questo approccio i parametri del modello AR sono stimati da un set incompleto di dati. Successivamente viene fatta una stima del valore dei sample mancanti. Questo può essere considerato il primo step di un algoritmo iterativo rapidamente convergente [cita].
+\medskip 
+\\
+Si assuma che $s_{k}$ , $k =  -\infty , \cdots , +\infty$ , sia una realizzazione di un processo auto-regressivo stazionario $\tilde{s}_{k}$ , $k =  -\infty , \cdots , +\infty$ . Ciò significa che esistono un intero positivo \emph{p}, detto \textbf{ordine} del modello AR, e dei numeri $a_{1}$, $\cdots , a_{p+1}$ , con $a_{1}=1$ detti \textbf{coefficienti} del modello AR. Sia inoltre $\tilde{e}_{k}$ , $k =  -\infty , \cdots , +\infty$ un processo di \textbf{rumore bianco} con varianza $\sigma_{e}^{2}$ tale che: 
+
+\begin{equation}
+a_{1}\tilde{s}_{k} + a_{2}\tilde{s}_{k-1} + \cdots + a_{p+1}\tilde{s}_{k-p} = \tilde{e}_{k}
+\end{equation}
+
+con $k =  -\infty , \cdots , +\infty $. 
+\\
+Per convenzione si assuma che $a_{k}=0$ per $k < 1$ o $k > p+1$. 
+\medskip 
+\\
+I \textbf{dati disponibili} consistono nel segmento $s_{k}$, $k=1, \cdots , N$ di una realizzazione del processo AR $\tilde{s}_{k}$ , $k =  -\infty , \cdots , +\infty$. 
+Come ipotizzato nell'introduzione, si assuma che i sample incogniti si presentino  agli istanti di tempo noti $t(1), \cdots , t(m)$, dove: 
+\[1< (p+1) \leq t(1) < \cdots < t(m) \leq N-p \]
+
+
+Il \textbf{problema} in esame consiste nella \emph{stima} degli $m$ sample incogniti\linebreak
+$s_{t(1)}, \cdots , s_{t(m)} $, dei $p$ parametri del modello AR $a_{2}, \cdots ,a_{p+1}$ e di $\sigma_{e}^{2}$ dai dati disponibili in modo che la sequenza ricostruita sia il più coerente possibile con il modello assunto. Quantitativamente la ricostruzione dovrà essere tale da minimizzare la somma dei quadrati dell'errore residuo $e_{p+1}, \cdots ,e_{N}$.
+\\
+Esistono molti metodi per la stima dell'ordine di processi auto-regressivi (come riportato nell'articolo \cite{art4}), così come delle funzioni \textsc{Matlab} già implementate. Nonostante ciò, il paper \cite{paper_1986} in esame assume che, se $p$ è incognito, verrà scelto $p$ in funzione di $m$, numero dei sample incogniti:
+\begin{equation}
+p=3m+2
+\end{equation}
+Questa relazione piuttosto arbitraria si è dimostrata dare buoni risultati di interpolazione.
+
+	\subsection{Presentazione del metodo di interpolazione}
+Adottiamo la seguente nomenclatura:
+
+\[ \textbf{a} = 
+\left[
+\begin{array}{c}
+a_{1} \\ \vdots \\ a_{p+1}
+\end{array}
+\right] \qquad 
+\textbf{x} = 
+\left[
+\begin{array}{c}
+s_{t(1)} \\ \vdots \\ s_{t(m)}
+\end{array}
+\right] \qquad 
+\]
+
+Inoltre siano $\mathbf{\hat{a}}$ la stima di $\mathbf{a}$ e $\mathbf{\hat{x}}$ la stima di $\mathbf{x}$. 
+\\
+Come anticipato, la stima di \textbf{a} e \textbf{x} è formulata sotto forma di \emph{problema di minimizzazione}. Sceglierò $\mathbf{\hat{a}}$ e $\mathbf{\hat{x}}$ tali che
+a funzione 
+\begin{equation}
+Q(\mathbf{a},\mathbf{x}) = \sum_{k=p+1}^N \abs{\sum_{l=1}^{p+1} a_{k}s_{k-l}}^{2} 
+= \sum_{k=p+1}^N \abs{e_{k}}^{2}
+\end{equation}
+sia minima in funzione di \textbf{a} e \textbf{x}. 
+\\Determinati $\mathbf{\hat{a}}$ e $\mathbf{\hat{x}}$, potrò stimare $\sigma_{e}^{2}$ come:
+
+\begin{equation} \label{ii5}
+\hat{\sigma}_{e}^{2} = \frac{1}{N-p-m} Q(\mathbf{\hat{a}} , \mathbf{\hat{x}})
+\end{equation}
+	
+La particolare scelta di minimizzare la funzione $Q(\mathbf{a},\mathbf{x})$ per ottenere le stime di $\mathbf{a}$ e $\mathbf{x}$ ha molteplici motivazioni, discusse nel dettaglio nel paper \cite{paper_1986}. In particolare, nell'\textit{Appendice A} si dimostra che, ipotizzando che i valori dei campioni abbiano una funzione di densità di probabilità di tipo Gaussiano, minimizzare $Q(\mathbf{a},\mathbf{x})$ rispetto a $\mathbf{x}$ sia lo stesso che trovare la minima stima della varianza di $\mathbf{x}$, noti $p$ ed $\mathbf{a}$.
+\medskip 
+\\
+Si nota immediatamente come minimizzare la funzione $Q(\mathbf{a},\mathbf{x})$ rispetto a $\mathbf{a}$ e $\mathbf{x}$ sia un problema tutt'altro che banale in quanto essa contiene termini del quarto ordine come $a_{2}^{2}s_{t(m)}^{2}$. Useremo quindi un \textbf{approccio sub-ottimale}:
+
+\begin{enumerate}
+\item Scegliamo una stima iniziale $\mathbf{\hat{x}}^{(0)}$ per il vettore $\mathbf{x}$ dei sample incogniti, per esempio $\mathbf{\hat{x}}^{(0)} = \mathbf{0}$.
+\item Successivamente minimizziamo $Q(\mathbf{a},\mathbf{\hat{x}}^{(0)})$ in funzione di $\mathbf{a}$ per ottenere una stima di $\mathbf{\hat{a}}$.
+\item Infine minimizziamo $Q(\mathbf{\hat{a}},\mathbf{x})$ in funzione di $\mathbf{x}$ per ottenere una stima di $\mathbf{\hat{x}}$ dei sample incogniti. 
+\end{enumerate}
+
+Entrambe le minimizzazioni sono possibili in quanto $Q(\mathbf{a},\mathbf{x})$ è quadratica sia in funzione di $\mathbf{a} \in \mathbb{R}^{p} $ che in funzione di $\mathbf{x} \in \mathbb{R}^{m}$. Si può dimostrare che
+\begin{equation}
+Q(\mathbf{a},\mathbf{x}) = \mathbf{a}^{T}C(\mathbf{x})\mathbf{a} +
+2\mathbf{a}^{T}\mathbf{c}(\mathbf{x}) + c_{11}(\mathbf{x})
+\end{equation}
+
+dove $C(\mathbf{x})$ è la \emph{matrice di auto-covarianza} di dimensioni $p \times p$
+definita come:% daverificare
+
+\[
+C(\mathbf{x}) = (c_{ij}(\mathbf{x}))_{i,j = 2, \cdots, p+1}
+\] e 
+\[
+\mathbf{c}(\mathbf{x}) = 
+\left[
+\begin{array}{c}
+c_{1,2}(\mathbf{x}) \\ \vdots \\ c_{1,p+1}(\mathbf{x})
+\end{array}
+\right]
+\]
+
+con % daverificare
+\[
+c_{ij}(\mathbf{x}) = \sum_{k=p+1}^{N} s_{k-i}s_{k-j},
+\qquad
+i,j = 1,2, \cdots , p+1.
+\]
+
+
+Allo stesso modo, si può dimostrare che 
+	
+\begin{equation}
+Q(\mathbf{a},\mathbf{x}) = \mathbf{x}^{T}B(\mathbf{a})\mathbf{x} +
+2\mathbf{x}^{T}\mathbf{z}(\mathbf{a}) + D(\mathbf{a})
+\end{equation}
+
+dove
+\begin{equation} \label{ii11}
+B(\mathbf{a}) = (b_{t(i)-t(j)})_{i,j = 1, \cdots, m}
+\end{equation}
+
+\[
+\mathbf{z}(\mathbf{a}) = 
+\left[
+\begin{array}{c}
+z_{1}(\mathbf{a}) \\ \vdots \\ z_{m}(\mathbf{a})
+\end{array}
+\right]
+\]
+
+con %da ridefinire con gli indici matlab
+\[
+z_{i}(\mathbf{a}) = \sum_{k=-p}^{p} b_{k}s_{t(i)-k},
+\qquad
+i = 1, \cdots, m,
+\]
+
+\begin{equation} \label{ii3}
+b_{l} = \sum_{k=0}^{p} a_{k}a_{k+l},
+\qquad
+l = -p, \cdots , +p
+\end{equation}
+and $D(\mathbf{a}) \in \mathbb{R}$ dipendente da $\mathbf{a}$ e dai sample noti.
+\\Quindi $\mathbf{\hat{a}}$ e $\mathbf{\hat{x}}$ saranno dati rispettivamente da
+\begin{equation} \label{ii13}
+C(\mathbf{\hat{x}}^{(0)})\mathbf{\hat{a}} = - \mathbf{c}(\mathbf{\hat{x}}^{(0)}),
+\end{equation}
+e
+\begin{equation} \label{ii14}
+B(\mathbf{\hat{a}})\mathbf{\hat{x}} = - \mathbf{z}(\mathbf{\hat{a}}).
+\end{equation}
+
+Il metodo appena descritto per il calcolo dei coefficienti del modello AR attraverso una sequenza di campioni è noto come \textbf{metodo dell'autocovarianza} \cite{art5}. Un metodo diverso, il metodo dell'auto-correlazione, verrà descritto nel paragrafo \ref{algoritmo}.
+\medskip
+\\
+Sostituendo la (\ref{ii13}) nella (\ref{ii5}) segue che
+\begin{equation}
+\hat{\sigma}_{e}^{2} = \frac{1}{N-p-m} (c_{1,1}(\mathbf{\hat{x}}) + 
+\mathbf{\hat{a}}^{T}\mathbf{c}(\mathbf{\hat{x}})).
+\end{equation}
+
+Il metodo di interpolazione appena descritto può essere considerato come il primo passo di un \textbf{algoritmo iterativo} nel quale, ad ogni passo, nuovi coefficienti $\mathbf{\hat{a}}$ del modello sono stimati attraverso la (\ref{ii13}) usando, anziché $\mathbf{\hat{x}}^{(0)}$, il vettore $\mathbf{\hat{x}}$ dei campioni mancanti precedentemente stimato attraverso la (\ref{ii14}). 
+Questi coefficienti ottenuti potranno essere adesso usati per ottenere una nuova stima dei sample mancanti e così via. Sembra chiaro, almeno intuitivamente che $Q(\mathbf{a},\mathbf{x})$ che decresca tendendo a qualche numero non-negativo. Si potrebbe sperare che la sequenza ottenuta converga nel punto in cui $Q(\mathbf{a},\mathbf{x})$ raggiunge il suo minimo globale. Sfortunatamente, è estremamente difficile provare un risultato del genere.\footnote{Si può tuttavia dimostrare che questo procedimento iterativo di minimizzazione assomiglia molto all'algoritmo EM (Expectation-Maximisation) di stima di parametri per le distribuzioni, vedi\cite[Appendice B]{paper_1986}.}
+
+
+	\subsubsection{Calcolo dei coefficienti del modello AR}
+Il calcolo di $\mathbf{\hat{a}}$ attraverso la (\ref{ii13}) è, in realtà, un problema conosciuto. Noto come \textbf{metodo dell'auto-covarianza}, esso è ampiamente discusso nel dettaglio nel paper \cite{art5}. Nello stesso paper è esposto un algoritmo molto efficiente per il calcolo di $\mathbf{\hat{a}}$ attraverso la (\ref{ii13}) in $O(p^{2})$ operazioni: il \textbf{metodo dell'auto-correlazione}.\footnote{Un calcolo approssimato di $\mathbf{\hat{a}}$ da comunque un risultato di interpolazione soddisfacente: dunque vari e altri metodi possono essere applicati indifferentemente.}
+
+\paragraph{Metodo dell'auto-correlazione} In questo metodo anziché risolvere il sistema lineare (\ref{ii13}) verrà risolto il sistema
+\[ \mathbf{R\hat{a}} = - \mathbf{r}  \]
+
+dove R è la \emph{matrice di auto-correlazione} definita come:
+%RICONTROLLARE INDICI
+\[
+\mathbf{R} = (r(i-j))_{i,j=2,\cdots,p+1}
+\]
+e 
+\[
+\mathbf{r} = 
+\left[
+\begin{array}{c}
+r(2) \\ \vdots \\ r(p+1)
+\end{array}
+\right]
+\]
+dove
+%RICONTROLLARE CON INDICI MATLAB
+\[
+r(j) = \frac{1}{N} \sum_{k=1}^{N-\abs{j}} s_{k}s_{k+\abs{j}} ,
+\quad
+j= -p, \cdots, +p
+\]
+è una stima pesata dell'autocorrelazione di $j-esimo$ ritardo di auto-correlazione di $\tilde{s}_{k}, k = -\infty,\cdots,+\infty$. Per semplicità, noi risolveremo il sistema con la funzione \texttt{mldivide}, nativa in ambiente \textsc{Matlab}.\footnote{Il sistema può essere risolto in $O(p^{2})$ operazioni dall' algoritmo di Levinson-Durbin. \cite{art12}
+Tuttavia non ci sono differenze significanti nei risultati di interpolazione ottenuti dall'autore attraverso differenti metodi.}
+	
+	
+	\subsubsection{Calcolo dei campioni incogniti}
+Per il calcolo di $\mathbf{\hat{x}}$ attraverso la (\ref{ii14}) è utile analizzare la matrice 
+$B(\mathbf{\hat{a}})$ definita nel dettaglio in (\ref{ii13}) e (\ref{ii3}). Dalla (\ref{ii11}
+) possiamo vedere che $\mathbf{\hat{x}}$ ha valori costanti $b_{0}$ sulla sua diagonale principale.
+Inoltre, la matrice $\mathbf{\hat{x}}$ è \textbf{definita positiva}. In ambiente \textsc{Matlab} questa proprietà è facilmente dimostrabile con l'uso della funzione \texttt{chol}.\footnote{Nella Sezione III.B del paper \cite{paper_1986} di riferimento è presente una dimostrazione matematica.}
+Il fatto che $B(\mathbf{\hat{a}})$ sia definita positiva ci permette di utilizzare la \emph{decomposizione di Cholesky}\footnote{
+Come illustrato in \cite[Sezione III.B]{paper_1986}, esistono molteplici metodi per la risoluzione di $B(\mathbf{\hat{a}})$. Tuttavia in questo progetto (e nello stesso paper di rifermento) verrà esposta la sola decomposizione di Cholesky.
+} per calcolare $\mathbf{\hat{x}}$ in $O(m^{3})$ operazioni.
+
+\paragraph{Decomposizione della matrice $B(\mathbf{\hat{a}})$}
+Nella decomposizione di Cholesky la matrice $B(\mathbf{\hat{a}})$ è scomposta nel prodotto
+
+
+
+\newpage
+	\section{L'algoritmo} \label{algoritmo}
+	Dummy text
+\newpage
+
+\newpage
+	\section{Test e risultati}
+	\subsection{Subsection}
+
+Dummy text
+
+\newpage
+
+\bibliography{calcolo} 
+\bibliographystyle{ieeetr}
+
+\end{document}

@@ -1,4 +1,4 @@
-function [a_i] = a_estimator(x_i,t_pos, sig, p_i)
+function [a_i] = a_estimator(sig, p_i)
 %A_ESTIMATOR Given an estimation of 'x', an estimation of 'a' is given
 %   Q(a,x) is minimized as function of a to obtain a. (Section III.A)
 %   We'll use the AUTOCORRELATION METHOD
@@ -6,20 +6,27 @@ function [a_i] = a_estimator(x_i,t_pos, sig, p_i)
 
 %   Also Try estimate : Estimate ARIMA or ARIMAX model parameters
 %   Also try ar: Estimate parameters of AR model for scalar time series
+%
+%   a_i = a(2) ... (p+1);
 %%  PROVA
-%clc
-%clear all
-%sig = [ rand(1,10) 0 0 rand(1,10)];
-%x_i = rand(1,2);
-%t_pos = [ 11 12 ];
-%p_i = 8;
+%{
+clc
+clear all
+sig = sin(0.23.*pi.*[1:100]);
+t_pos = [ 31 32 33 ];
+p_i = 8;
+
+figure();
+subplot(2,1,1)
+stem(sig)
+hold on
+%}
 
 %%  Var
 N_i= length(sig);
-sig(t_pos) = x_i; %Estimated signal
 r_tmp = zeros(2*p_i+1,1);
 r = zeros(p_i,1);
-R = zeros(p_i, p_i);
+R = zeros(p_i);
 
 %%  definition of r
 %   r(j): a (biased) estimate for the j-th lag of s
@@ -29,7 +36,7 @@ for j= (-p_i):p_i
         r_tmp(p_i+j+1)= r_tmp(p_i+j+1) + sig(k)*sig(k+abs(j));
     end
 end
-
+r_tmp = r_tmp./N_i;
 r = r_tmp((p_i+2):end); % r=[r(1),...,r(p)]
 
 %%  definition of R (Autocorrelation matrix)
@@ -47,5 +54,13 @@ end
 %       (Section III.A)
 a_i = R\(-r);
 
+%{
+a_i = [1;a_i];
+a_est = arcov(sig,p_i);
+ahi= zeros(p_i+1,2);
+ahi(:,1) = a_i;
+ahi(:,2) = a_est';
+
+%}
 end
 
