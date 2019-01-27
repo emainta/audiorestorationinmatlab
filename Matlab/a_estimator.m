@@ -1,13 +1,15 @@
-function [a_i] = a_estimator(sig, p_i)
-%A_ESTIMATOR Given an estimation of 'x', an estimation of 'a' is given
-%   Q(a,x) is minimized as function of a to obtain a. (Section III.A)
-%   We'll use the AUTOCORRELATION METHOD
-%   R.*a = -r
-
-%   Also Try estimate : Estimate ARIMA or ARIMAX model parameters
-%   Also try ar: Estimate parameters of AR model for scalar time series
+function [a_i] = a_estimator(sig, p_i, met)
+%A_ESTIMATOR Dato un segnale 'sig', questa funzione ritorna una stima di
+%   'a' , vettore dei coefficienti del modello AR
 %
-%   a_i = a(2) ... (p+1);
+%   IMPORTANTE: Passare solo a_i = a(2) ... (p+1)
+%   a(1) è sempre 1. 
+
+%   Alla chiamata di questa funzione è possibile usare uno tra i due metodi
+%   descritti nel dettaglio nella relazione:
+%   - se (met == 'acov') verrà usato il METODO DELL'AUTO-COVARIANZA
+%   - se (met == 'acor') verrà usato il METODO DELL'AUTO-CORRELAZIONE
+
 %%  PROVA
 %{
 clc
@@ -28,6 +30,10 @@ r_tmp = zeros(2*p_i+1,1);
 r = zeros(p_i,1);
 R = zeros(p_i);
 
+%% Check di met - METODO DELL'AUTOCORRELAZIONE
+%   R.*a = -r
+
+if (met == 'acor') 
 %%  definition of r
 %   r(j): a (biased) estimate for the j-th lag of s
 
@@ -54,6 +60,14 @@ end
 %       (Section III.A)
 a_i = R\(-r);
 
+%% Check di met - METODO DELL'AUTOCOVARIANZA
+elseif (met == 'acov') 
+    a_est = arcov(sig,p_i);
+    a_i = a_est(2:end)';
+
+else
+    fprintf("Errore nella richiesta del metodo di stima si 'a_i'")
+end
 %{
 a_i = [1;a_i];
 a_est = arcov(sig,p_i);

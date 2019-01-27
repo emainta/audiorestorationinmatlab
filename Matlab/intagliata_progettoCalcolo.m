@@ -6,6 +6,19 @@ clc
 clear all
 close all
 
+%% Richieste a utente
+prompt = 'N iterazioni? ';
+n_it = input(prompt);
+
+%   Scelta del metodo di stima dei parametri del modello AR
+fprintf('Scelta del metodo di stima dei parametri del modello AR: \n')
+fprintf('[1] : METODO DELL''AUTOCORRELAZIONE \n')
+fprintf('[2] : METODO DELL''AUTOCOCOVARIANZA \n')
+prompt = 'Digita [1] o [2]: \n';
+
+tmpA = input(prompt);
+a_met = met_choice(tmpA);
+
 %%  Prova
 %s_tmp = sin(0.23.*pi.*[1:512]);
 
@@ -40,10 +53,6 @@ a = [1 zeros(1,p)].' ; % a: col vect of the prediction coeff., a(1)=1
                                % Remember : length(a) = p+1
 %% Prova
 
-a_ = a';
-sig_ = sig;
-prompt = 'N iterazioni? ';
-n_it = input(prompt);
 %% Check the input
 
 %% Sub-optimal approach
@@ -51,11 +60,8 @@ tic
 
 for i=1:n_it
 %% Estimation of a
-%[a_i] = a_estimator(sig, p_i)
-a(2:end) = a_estimator(sig, p);
-
-a_ = arcov(sig,p);
-a_ = a_';
+%[a_i] = a_estimator(sig, p_i, met)
+a(2:end) = a_estimator(sig, p, a_met);
 
 %% Estimation of x
 %[sig] = x_estimator(a_i, t_pos, sig)
@@ -67,8 +73,6 @@ end
 subplot(3,1,3)
 ylabel("Segnale Ricostruito")
 plot(sig(90:150))
-hold on
-plot(sig_(90:150))
 
 toc
 fprintf('Done!')
