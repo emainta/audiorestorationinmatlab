@@ -5,12 +5,11 @@ function [sig] = x_estimator(a_i, t_pos, sig)
 
 
 %% Prova
-
 %{
 clc
 clear all
-sig_or = sin(0.5*[1:1024]);
-%sig = [ rand(1,20) 0 0 0 0 rand(1,20) ];
+close all
+sig_or = sin(2*500*3.14*[1:1024]);
 p_i =20;
 a_i = arcov(sig_or,p_i)';
 t_pos = linspace(100,120,21);
@@ -23,6 +22,7 @@ subplot(3,1,1)
 stem(sig([80:130]))
 hold on
 stem(sig_or(80:130)+0.001)
+legend('S. bucato','S. Originale')
 hold on
 %}
 
@@ -31,7 +31,6 @@ p_i = length(a_i)-1; %length(a) = p + 1
 m_i = length(t_pos);  %length(t_pos) = m ?
 x_i = sig(t_pos(1):t_pos(m_i))';
 
-% b(l) = b'(l+p+1)
 b = zeros(1, 2*p_i+1); 
 
 B = zeros(m_i);
@@ -80,7 +79,6 @@ end
 %   Per adesso ho deciso usare l'operatore mldivide (\)
 %   x = C\E solves the system of linear equations C*x = E
 
-%b(p_i+1)
 x_i = B\(-z);
 sig(t_pos) = x_i;
 
@@ -89,17 +87,19 @@ sig(t_pos) = x_i;
 
 %% Prova - Un po' di plot
 %{
-sig_fin = sig;
-sig_fin(t_pos) = x_i;
-
 hold on
 subplot(3,1,2)
 stem(sig_or(80:130))
+title('segnale originale e finale')
 hold on
+stem(sig(80:130)+0.01)
+hold on
+legend('S. originale','S. finale')
 subplot(3,1,3)
-stem(sig_fin(80:130))
+stem(sig(80:130))
+title('segnale finale')
 
-err = max(sig_or(80:130) - sig_fin(80:130) );
+err = max(sig_or(80:130) - sig(80:130) );
 
 fprintf("\n Errore massimo : " + err + "\n")
 
