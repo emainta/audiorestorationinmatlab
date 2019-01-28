@@ -20,8 +20,9 @@ tmpA = input(prompt);
 a_met = met_choice(tmpA);
 
 %%  Test Signals
-fprintf('[1] : Sinusoide (f= 500Hz), sequenza di 44100 sample, m=4. \n')
+fprintf('[1] : Sinusoide (f= 500Hz), sequenza di 44100 sample, unico burst,m=4. \n')
 fprintf('[2] : File audio percussivo, fs=44100, m=8. \n')
+fprintf('[3] : Due sinusoidi, sequenza di 512 sample, 3 bursts, m=4. \n')
 
 
 prompt = 'Scegli il tuo segnale di prova: \n';
@@ -29,16 +30,20 @@ tmpB = input(prompt);
 
 switch tmpB
     case 1
-    s_tmp = sin(0.23*[1:44100]);
+    s_tmp = sin(2*pi*(500/44100).*[1:44100]);
     t = [1000 1001 1002 1003 ]; 
 
     case 2
     [s_tmp, fs] = audioread('d.wav');
     t = linspace(120,128,9);
     s_tmp = s_tmp';
+    
+    case 3
+        s_tmp = sin(0.23*pi*[1:512] +0.3*pi) + 0.6*sin(0.4*pi*[1:512] +0.3*pi);
+        t = [100 101 102 103 221 222 223 224 341 342 343 344 ];
 
     otherwise
-        fprintf('Nessun segnale di test corrisponde al codice inserito\n')
+        error('Nessun segnale di test corrisponde al codice inserito')
     
 end
 
@@ -63,10 +68,10 @@ hold on
 sig(t) = 0 ;
 hold on
 subplot(3,1,2)
-stem(sig((t(1)-20):(t(end)+20)))
+stem([(t(1)-20):(t(end)+20)], sig((t(1)-20):(t(end)+20)))
 hold on
-
-stem([20:(20+length(t)-1)], sig((t(1)):(t(end))))
+stem(t, sig(t))
+%stem([21:(21+length(t)-1)], sig((t(1)):(t(end))))
 title("Segnale Compromesso")
 
 %% Variables
@@ -77,7 +82,7 @@ p = 3*m+2; %p: order of the AR process
 a = [1 zeros(1,p)].' ; % a: col vect of the prediction coeff., a(1)=1 
                                % Remember : length(a) = p+1
 %% Prova
-lista= zeros(n_it,length(sig));
+lista= zeros(n_it,length(a));
 %% Check the input
 
 %% Sub-optimal approach
@@ -87,21 +92,24 @@ for i=1:n_it
 %% Estimation of a
 %[a_i] = a_estimator(sig, p_i, met)
 a(2:end) = a_estimator(sig, p, a_met);
-
+lista(i,:)=a;
 %% Estimation of x
 %[sig] = x_estimator(a_i, t_pos, sig)
 sig = x_estimator(a,t,sig);
 
-lista(i,:)=sig;
+%lista(i,:)=sig;
 end
 
 subplot(3,1,3)
 stem(sig((t(1)-20):(t(end)+20)))
 hold on
-stem(s_tmp((t(1)-20):(t(end)+20)))
+stem(s_tmp((t(1)-20):(t(end)+20))+0.02)
 legend('Ricostruito','Originale')
 title("Segnale Ricostruito")
 
 toc
+delta = max(abs(s_tmp-sig));
+delta = 100*round(delta,3);
+fprintf("Scostamento massimo: " + delta + "%% \n")
 fprintf('Done! \n')
 

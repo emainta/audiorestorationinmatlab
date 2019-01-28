@@ -29,7 +29,7 @@ hold on
 %%  Var
 p_i = length(a_i)-1; %length(a) = p + 1
 m_i = length(t_pos);  %length(t_pos) = m ?
-x_i = sig(t_pos(1):t_pos(m_i))';
+x_i = sig(t_pos)';
 
 b = zeros(1, 2*p_i+1); 
 
@@ -52,7 +52,12 @@ end
 
 for i = 1:m_i
     for j=1:m_i
+        if ((t_pos(i) - t_pos(j) + p_i + 1)<0 | ...
+                (t_pos(i) - t_pos(j) + p_i + 1)>2*p_i+1 )
+            B(i,j) = 0;
+        else
         B(i,j) = b(t_pos(i) - t_pos(j) + p_i + 1);
+        end
     end
 end
 
