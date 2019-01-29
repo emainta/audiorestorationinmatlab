@@ -36,7 +36,7 @@ Il metodo è infine testato su segnali artificialmente generati, su segnali musi
 \newpage
 	\section{Trattazione teorica}
 	
-	\subsection{Il problema e le ipotesi}
+	\subsection{Il problema e le ipotesi} \label{hp}
 Il paper \cite{paper_1986} tratta il problema della ricostruzione (o interpolazione) di sample mancanti in segnali campionati, in particolare in segnali audio. Viene presentato un algoritmo capace di ricostruire in modo soddisfacente i sample mancanti.
 \\
 Le ipotesi che facciamo sono:
@@ -88,7 +88,7 @@ p=3m+2
 \end{equation}
 Questa relazione piuttosto arbitraria si è dimostrata dare buoni risultati di interpolazione.
 
-	\subsection{Presentazione del metodo di interpolazione}
+	\subsection{Presentazione del metodo di interpolazione} \label{presentazione}
 Adottiamo la seguente nomenclatura:
 
 \[ \textbf{a} = 
@@ -216,7 +216,7 @@ Il metodo di interpolazione appena descritto può essere considerato come il pri
 Questi coefficienti ottenuti potranno essere adesso usati per ottenere una nuova stima dei sample mancanti e così via. Sembra chiaro, almeno intuitivamente che $Q(\mathbf{a},\mathbf{x})$ che decresca tendendo a qualche numero non-negativo. Si potrebbe sperare che la sequenza ottenuta converga nel punto in cui $Q(\mathbf{a},\mathbf{x})$ raggiunge il suo minimo globale. Sfortunatamente, è estremamente difficile provare un risultato del genere.\footnote{Si può tuttavia dimostrare che questo procedimento iterativo di minimizzazione assomiglia molto all'algoritmo EM (Expectation-Maximisation) di stima di parametri per le distribuzioni, vedi\cite[Appendice B]{paper_1986}.}
 
 
-	\subsubsection{Calcolo dei coefficienti del modello AR}
+	\subsubsection{Calcolo dei coefficienti del modello AR}  \label{aest}
 Il calcolo di $\mathbf{\hat{a}}$ attraverso la (\ref{ii13}) è, in realtà, un problema conosciuto. Noto come \textbf{metodo dell'auto-covarianza}, esso è ampiamente discusso nel dettaglio nel paper \cite{art5}. Nello stesso paper è esposto un algoritmo molto efficiente per il calcolo di $\mathbf{\hat{a}}$ attraverso la (\ref{ii13}) in $O(p^{2})$ operazioni: il \textbf{metodo dell'auto-correlazione}.\footnote{Un calcolo approssimato di $\mathbf{\hat{a}}$ da comunque un risultato di interpolazione soddisfacente: dunque vari e altri metodi possono essere applicati indifferentemente.}
 
 \paragraph{Metodo dell'auto-correlazione} In questo metodo anziché risolvere il sistema lineare (\ref{ii13}) verrà risolto il sistema
@@ -259,22 +259,50 @@ Come illustrato in \cite[Sezione III.B]{paper_1986}, esistono molteplici metodi 
 \paragraph{Decomposizione della matrice $\mathbf{B(\hat{a})}$}
 Nella decomposizione di Cholesky la matrice $B(\mathbf{\hat{a}})$ è scomposta nel prodotto...
 
-
-
 \newpage
 	\section{L'algoritmo} \label{algoritmo}
-	SPIEGAZIONE ALGORITMO
+	L'algoritmo \textsc{Matlab} in allegato mette in pratica l'\emph{approccio sub-ottimale} 	qui descritto nella Sezione \ref{presentazione}. 
+	Per prima cosa l'algoritmo controlla che i dati in ingresso rispettino le ipotesi fatte nella Sezione \ref{hp}.
+	Dopo aver definito le variabili, inizia un ciclo iterativo in cui:
+\begin{enumerate}	
+\item Viene calcolata una stima dei coefficienti del modello AR tramite la funzione \texttt{a\char`_estimator}.
+
+\item Viene calcolata una stima dei campioni incogniti tramite la funzione 			    	\\\ \texttt{x\char`_estimator}. I campioni stimati sostituiscono i campioni incogniti nel segnale ricostruito.
+
+\item Con il segnale così stimato si potrà iterare dal punto (1), trovando una nuova stima dei parametri del modello AR.
+\end{enumerate}
+L'algoritmo si serve di alcune funzioni ausiliarie.
+\paragraph{Funzione \texttt{a\char`_estimator}}
+[a] = a\char`_estimator(sig, p, met)
+\paragraph{Funzione \texttt{x\char`_estimator}}
+[sig] = x\char`_estimator(a, t, sig)
+
+\medskip
+L'algoritmo consente all'utente alcune scelte per la ricostruzione del segnale.
+L'utente può decidere:
+\begin{itemize}
+\item il \textit{numero di iterazioni} per cui ripetere i passaggi descritti sopra
+\item il \textit{metodo di stima dei parametri del modello AR} (vedi Paragrafo precedente)
+\item il metodo per il calcolo di $\sigma_{e}^{2}$
+\end{itemize}
+Inoltre, nella versione dimostrativa allegata, l'utente può scegliere quale segnale compromettere e poi ricostruire. I segnali a disposizione sono quelli presentati nei test della Sezione \ref{test}.
+
 	
 	\subsection{Versione iterativa}
 	Appendice B.a
-	\subsection{arcov Matlab vs alg consigliato}
-	Nel nostro progetto, per il calcolo dei coefficienti del modello AR, abbiamo messo a confronto due differenti metodi.
-	\subsection{chol Matlab vs alg consigliato}
-	\subsection{considerazioni sull'errore}
+	\subsection{Scelta del metodo di stima dei parametri del modello AR}
+	Nel nostro progetto, per il calcolo dei coefficienti del modello AR, abbiamo messo a confronto due differenti metodi: il \textbf{metodo dell'auto-covarianza} e il \textbf{metodo dell'auto-correlazione}.
+	Il metodo dell'auto-covarianza, descritto nel dettaglio nella Sezione \ref{presentazione}, è per semplicità implementato attraverso la funzione \texttt{arcov} di \textsc{Matlab}. Questa funzione, tramite appunto il metodo dell'auto-covarianza, stima i parametri di un modello AR di ordine $p$.
+	Il metodo dell'auto-correlazione è invece interamente implementato come descritto nella Sezione \ref{aest}.
+\\
+	Dai test della Sezione \ref{test} è possibile vedere che, nella maggior parte dei casi, non c'è una notevole differenza tra i risultati di interpolazione ottenuti tramite il metodo dell'auto-covarianza o il metodo dell'auto-correlazione.
+	
+	\subsection{chol Matlab vs algoritmo consigliato}
+	\subsection{Alcune considerazioni qualitative sull'errore}
 	Riassunto sezione II.B
 
 \newpage
-	\section{Test e risultati}
+	\section{Test e risultati} \label{test}
 Text
 
 \newpage
