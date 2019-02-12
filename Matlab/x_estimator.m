@@ -61,8 +61,9 @@ for i = 1:m_i
     end
 end
 
-chol(B);
-
+%chol(B);
+%K = cond(B);
+%fprintf("n di cond= %d \n", K)
 %%  definition of z
 
 for i=1:m_i
@@ -81,7 +82,7 @@ end
 %L = chol(B,'lower');
 
 %%  Simpler alternative ( To improve )
-%   Per adesso ho deciso usare l'operatore mldivide (\)
+%   Ho deciso usare l'operatore mldivide (\)
 %   x = C\E solves the system of linear equations C*x = E
 
 x_i = B\(-z);

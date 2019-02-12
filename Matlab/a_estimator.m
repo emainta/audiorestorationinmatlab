@@ -1,5 +1,5 @@
 function [a_i] = a_estimator(sig, p_i, met)
-%A_ESTIMATOR Dato un segnale 'sig', questa funzione ritorna una stima di
+%A_ESTIMATOR : Dato un segnale 'sig', questa funzione ritorna una stima di
 %   'a' , vettore dei coefficienti del modello AR
 %
 %   IMPORTANTE: Passare solo a_i = a(2) ... (p+1)
@@ -66,7 +66,7 @@ elseif (met == 'acov')
     a_i = a_est(2:end)';
 
 else
-    fprintf("Errore nella richiesta del metodo di stima si 'a_i'")
+    fprintf("Errore nella richiesta del metodo di stima di 'a_i'")
 end
 %{
 a_i = [1;a_i];
