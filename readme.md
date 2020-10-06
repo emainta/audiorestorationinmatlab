@@ -1,3 +1,12 @@
+# Progetto MATLAB - Fondamenti di Calcolo Numerico
+*A.A. 2018/2019*
+
+## Abstract 
+
+Questo progetto vuole illustrare un algoritmo adattivo per la ricostruzione di sample mancanti in segnali audio campionati che possono essere localmente descritti attraverso processi auto-regressivi. In particolare, in questo elaborato discutiamo l’implementazione in ambiente Matlab. 
+
+Questo progetto è stato sviluppato in occasione del corso di **Fondamenti di Calcolo Numerico** del Politecnico di Milano dell'A.A. 2018/2019.
+
 ## Il codice
 Il codice si trova nella cartella **Matlab**. 
 
